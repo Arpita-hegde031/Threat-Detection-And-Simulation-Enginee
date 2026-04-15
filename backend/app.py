@@ -1,121 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SOC Register</title>
-  <link rel="stylesheet" href="auth.css" />
-</head>
-<body>
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from detection import run_detection
 
-  <div class="auth-container">
+app = Flask(__name__)
+CORS(app)  # Allows frontend to call this API
 
-    <div class="auth-card">
+# ── Run detection once when server starts ──
+print("Starting detection engine...")
+df, alerts = run_detection()
+logs = df.to_dict(orient="records")
+print(f"Server ready! {len(logs)} logs | {len(alerts)} alerts")
 
-      <!-- Logo -->
-      <div class="auth-logo">
-        <span class="shield">🛡️</span>
-        <h1>AI Threat Detection</h1>
-        <p>Create your SOC account</p>
-      </div>
+# ── Playbooks ──
+PLAYBOOKS = {
+    "BRUTE_FORCE": [
+        "Block the attacking IP immediately in firewall",
+        "Reset passwords for all targeted accounts",
+        "Enable account lockout after 5 failed attempts",
+        "Check if any login succeeded before blocking",
+        "Report IP to threat intelligence platform"
+    ],
+    "C2_BEACON": [
+        "Isolate the infected machine from network immediately",
+        "Block the external C2 IP in firewall",
+        "Run full malware scan on infected machine",
+        "Check all outbound connections from that machine",
+        "Rebuild the machine if malware is confirmed"
+    ],
+    "ANOMALY": [
+        "Investigate the flagged IP manually",
+        "Check if this is a known admin or service IP",
+        "Monitor the IP for next 24 hours",
+        "Cross-check with user activity logs",
+        "Escalate to senior analyst if suspicious"
+    ]
+}
 
-      <!-- Form -->
-      <div class="auth-form">
-        <h2>Register</h2>
+# ──────────────────────────────────────────
+# API Endpoint 1 — Get all logs
+# ──────────────────────────────────────────
+@app.route("/api/logs", methods=["GET"])
+def get_logs():
+    return jsonify({
+        "total": len(logs),
+        "logs": logs
+    })
 
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" id="fullname" placeholder="Enter your full name" />
-        </div>
+# ──────────────────────────────────────────
+# API Endpoint 2 — Get all alerts
+# ──────────────────────────────────────────
+@app.route("/api/alerts", methods=["GET"])
+def get_alerts():
+    return jsonify({
+        "total": len(alerts),
+        "alerts": alerts
+    })
 
-        <div class="form-group">
-          <label>Username</label>
-          <input type="text" id="username" placeholder="Choose a username" />
-        </div>
+# ──────────────────────────────────────────
+# API Endpoint 3 — Get playbook by threat
+# ──────────────────────────────────────────
+@app.route("/api/playbook", methods=["GET"])
+def get_playbook():
+    threat_type = request.args.get("type", "ANOMALY").upper()
+    steps = PLAYBOOKS.get(threat_type, PLAYBOOKS["ANOMALY"])
+    return jsonify({
+        "threat_type": threat_type,
+        "steps": steps
+    })
 
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="password" placeholder="Choose a password" />
-        </div>
-
-        <div class="form-group">
-          <label>Confirm Password</label>
-          <input type="password" id="confirm" placeholder="Confirm your password" />
-        </div>
-
-        <div class="error-msg"   id="error-msg"></div>
-        <div class="success-msg" id="success-msg"></div>
-
-        <button class="auth-btn" onclick="register()">Create Account →</button>
-
-        <p class="auth-link">
-          Already have an account?
-          <a href="login.html">Login here</a>
-        </p>
-      </div>
-
-    </div>
-
-    <div class="bg-dots"></div>
-
-  </div>
-
-  <script>
-    function register() {
-      const fullname = document.getElementById("fullname").value.trim();
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const confirm  = document.getElementById("confirm").value.trim();
-      const errorMsg   = document.getElementById("error-msg");
-      const successMsg = document.getElementById("success-msg");
-
-      errorMsg.style.display   = "none";
-      successMsg.style.display = "none";
-
-      // Validation
-      if (!fullname || !username || !password || !confirm) {
-        errorMsg.textContent = "Please fill in all fields.";
-        errorMsg.style.display = "block";
-        return;
-      }
-
-      if (password.length < 6) {
-        errorMsg.textContent = "Password must be at least 6 characters.";
-        errorMsg.style.display = "block";
-        return;
-      }
-
-      if (password !== confirm) {
-        errorMsg.textContent = "Passwords do not match.";
-        errorMsg.style.display = "block";
-        return;
-      }
-
-      // Check if username already exists
-      const users = JSON.parse(localStorage.getItem("soc_users") || "[]");
-      if (users.find(u => u.username === username)) {
-        errorMsg.textContent = "Username already taken. Choose another.";
-        errorMsg.style.display = "block";
-        return;
-      }
-
-      // Save new user
-      users.push({ fullname, username, password });
-      localStorage.setItem("soc_users", JSON.stringify(users));
-
-      successMsg.textContent = "Account created! Redirecting to login...";
-      successMsg.style.display = "block";
-
-      setTimeout(() => {
-        window.location.href = "login.html";
-      }, 1500);
-    }
-
-    // Allow Enter key
-    document.addEventListener("keydown", e => {
-      if (e.key === "Enter") register();
-    });
-  </script>
-
-</body>
-</html>
+# ──────────────────────────────────────────
+# Run the server
+# ──────────────────────────────────────────
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)
