@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOC Register</title>
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body>
+
+  <div class="auth-container">
+
+    <div class="auth-card">
+
+      <!-- Logo -->
+      <div class="auth-logo">
+        <span class="shield">🛡️</span>
+        <h1>AI Threat Detection</h1>
+        <p>Create your SOC account</p>
+      </div>
+
+      <!-- Form -->
+      <div class="auth-form">
+        <h2>Register</h2>
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="fullname" placeholder="Enter your full name" />
+        </div>
+
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="username" placeholder="Choose a username" />
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="Choose a password" />
+        </div>
+
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <input type="password" id="confirm" placeholder="Confirm your password" />
+        </div>
+
+        <div class="error-msg"   id="error-msg"></div>
+        <div class="success-msg" id="success-msg"></div>
+
+        <button class="auth-btn" onclick="register()">Create Account →</button>
+
+        <p class="auth-link">
+          Already have an account?
+          <a href="login.html">Login here</a>
+        </p>
+      </div>
+
+    </div>
+
+    <div class="bg-dots"></div>
+
+  </div>
+
+  <script>
+    function register() {
+      const fullname = document.getElementById("fullname").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const confirm  = document.getElementById("confirm").value.trim();
+      const errorMsg   = document.getElementById("error-msg");
+      const successMsg = document.getElementById("success-msg");
+
+      errorMsg.style.display   = "none";
+      successMsg.style.display = "none";
+
+      // Validation
+      if (!fullname || !username || !password || !confirm) {
+        errorMsg.textContent = "Please fill in all fields.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      if (password.length < 6) {
+        errorMsg.textContent = "Password must be at least 6 characters.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      if (password !== confirm) {
+        errorMsg.textContent = "Passwords do not match.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      // Check if username already exists
+      const users = JSON.parse(localStorage.getItem("soc_users") || "[]");
+      if (users.find(u => u.username === username)) {
+        errorMsg.textContent = "Username already taken. Choose another.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      // Save new user
+      users.push({ fullname, username, password });
+      localStorage.setItem("soc_users", JSON.stringify(users));
+
+      successMsg.textContent = "Account created! Redirecting to login...";
+      successMsg.style.display = "block";
+
+      setTimeout(() => {
+        window.location.href = "login.html";
+      }, 1500);
+    }
+
+    // Allow Enter key
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter") register();
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOC Login</title>
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body>
+
+  <div class="auth-container">
+
+    <div class="auth-card">
+
+      <!-- Logo -->
+      <div class="auth-logo">
+        <span class="shield">🛡️</span>
+        <h1>AI Threat Detection</h1>
+        <p>Security Operations Center</p>
+      </div>
+
+      <!-- Form -->
+      <div class="auth-form">
+        <h2>Sign In</h2>
+
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="username" placeholder="Enter your username" />
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="Enter your password" />
+        </div>
+
+        <div class="error-msg" id="error-msg"></div>
+
+        <button class="auth-btn" onclick="login()">Login →</button>
+
+        <p class="auth-link">
+          Don't have an account?
+          <a href="register.html">Register here</a>
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Animated background dots -->
+    <div class="bg-dots"></div>
+
+  </div>
+
+  <script>
+    // If already logged in go to dashboard
+    if (localStorage.getItem("soc_user")) {
+      window.location.href = "index.html";
+    }
+
+    function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const errorMsg = document.getElementById("error-msg");
+
+      // Basic validation
+      if (!username || !password) {
+        errorMsg.textContent = "Please fill in all fields.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      // Check if user exists in localStorage
+      const users = JSON.parse(localStorage.getItem("soc_users") || "[]");
+      const user  = users.find(u => u.username === username && u.password === password);
+
+      if (!user) {
+        errorMsg.textContent = "Invalid username or password.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      // Save session and redirect
+      localStorage.setItem("soc_user", JSON.stringify(user));
+      window.location.href = "index.html";
+    }
+
+    // Allow Enter key
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter") login();
+    });
+  </script>
+
+</body>
+</html>
